@@ -1,0 +1,285 @@
+<!DOCTYPE html>
+<html lang="my">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>2D | 3D ရောင်းချက် စနစ် (Demo)</title>
+  <style>
+    :root{
+      --bg:#0f172a; --card:#111827; --muted:#1f2937;
+      --text:#e5e7eb; --soft:#94a3b8; --brand:#22d3ee;
+      --accent:#38bdf8; --danger:#ef4444; --ok:#34d399;
+    }
+    *{box-sizing:border-box} html,body{height:100%}
+    body{margin:0;background:linear-gradient(180deg,#0b1226 0%, #0f172a 60%);color:var(--text);font-family:system-ui,-apple-system,Segoe UI,Roboto,Inter,Helvetica,Arial,"Noto Sans Myanmar",sans-serif}
+    .container{max-width:1100px;margin:auto;padding:28px}
+    header{display:flex;gap:16px;align-items:center;justify-content:space-between;margin-bottom:20px}
+    .title{display:flex;gap:12px;align-items:center}
+    .badge{background:rgba(34,211,238,.12);color:var(--brand);border:1px solid rgba(34,211,238,.35);padding:4px 10px;border-radius:999px;font-size:12px}
+    h1{margin:0;font-weight:800;font-size:22px;letter-spacing:.2px}
+    .grid{display:grid;grid-template-columns:1.2fr .8fr;gap:18px}
+    @media (max-width:960px){.grid{grid-template-columns:1fr}}
+    .card{background:linear-gradient(180deg,rgba(255,255,255,.03),rgba(255,255,255,.02));border:1px solid rgba(255,255,255,.08);border-radius:16px;box-shadow:0 8px 24px rgba(0,0,0,.35)}
+    .card h2{font-size:16px;margin:0 0 12px 0}
+    .card .body{padding:16px}
+    .row{display:flex;gap:12px;flex-wrap:wrap}
+    .field{flex:1;min-width:160px}
+    label{display:block;font-size:12px;color:var(--soft);margin:0 0 6px 6px}
+    select,input{width:100%;padding:12px 12px;border-radius:12px;border:1px solid rgba(255,255,255,.10);background:var(--card);color:var(--text);outline:none}
+    input[type="number"]::-webkit-outer-spin-button,input[type="number"]::-webkit-inner-spin-button{appearance:none;margin:0}
+    .actions{display:flex;gap:10px;flex-wrap:wrap}
+    .btn{padding:12px 14px;border-radius:12px;border:1px solid rgba(255,255,255,.12);background:var(--muted);color:var(--text);cursor:pointer}
+    .btn:hover{filter:brightness(1.1)}
+    .btn.primary{background:linear-gradient(90deg,var(--brand),var(--accent));color:#081018;border-color:transparent;font-weight:700}
+    .btn.ghost{background:transparent}
+    .btn.danger{background:rgba(239,68,68,.12);border-color:rgba(239,68,68,.45);color:#fecaca}
+    table{width:100%;border-collapse:separate;border-spacing:0 8px}
+    thead th{font-size:12px;color:var(--soft);font-weight:600;text-align:left;padding:0 10px}
+    tbody td{background:rgba(255,255,255,.03);padding:12px 10px;border-top:1px solid rgba(255,255,255,.08);border-bottom:1px solid rgba(255,255,255,.08)}
+    tbody tr td:first-child{border-left:1px solid rgba(255,255,255,.08);border-top-left-radius:12px;border-bottom-left-radius:12px}
+    tbody tr td:last-child{border-right:1px solid rgba(255,255,255,.08);border-top-right-radius:12px;border-bottom-right-radius:12px;text-align:right}
+    .pill{padding:6px 10px;border-radius:999px;font-size:12px;border:1px solid rgba(255,255,255,.12);background:rgba(255,255,255,.06)}
+    .split{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+    @media (max-width:840px){.split{grid-template-columns:1fr}}
+    .stat{padding:16px;background:linear-gradient(180deg,rgba(56,189,248,.08),rgba(34,211,238,.06));border:1px solid rgba(56,189,248,.35);border-radius:14px}
+    .stat h3{margin:0 0 6px 0;font-size:12px;color:#bfe1ff}
+    .stat .v{font-size:22px;font-weight:800}
+    .list{display:flex;flex-direction:column;gap:8px}
+    .chip{display:flex;justify-content:space-between;gap:10px;align-items:center;padding:10px 12px;border:1px solid rgba(255,255,255,.08);background:rgba(255,255,255,.03);border-radius:12px}
+    .chip .k{opacity:.8}
+    .muted{color:var(--soft)}
+    footer{margin-top:16px;color:var(--soft);font-size:12px;text-align:center}
+    /* Modal / Voucher */
+    .modal{position:fixed;inset:0;display:none;align-items:center;justify-content:center;background:rgba(0,0,0,.5);padding:20px}
+    .modal.open{display:flex}
+    .sheet{width:min(720px,96vw);background:#fff;color:#111;border-radius:14px;overflow:hidden}
+    .sheet header{background:#0ea5e9;color:#001018;display:flex;justify-content:space-between;align-items:center;padding:12px 16px}
+    .sheet h3{margin:0;font-size:16px}
+    .sheet .content{padding:16px}
+    .sheet .content table{width:100%}
+    .sheet .content th,.sheet .content td{padding:8px 6px;border-bottom:1px dashed #e5e7eb;color:#111}
+    .sheet .content tfoot td{font-weight:700}
+    .sheet .controls{display:flex;gap:10px;justify-content:flex-end;padding:12px 16px}
+    .sheet .btn{background:#0ea5e9;color:#fff;border:0}
+    .sheet .btn.ghost{background:#111827;color:#fff;border:0}
+    .sheet .btn.print{background:#10b981}
+    .sheet .meta{display:flex;gap:12px;flex-wrap:wrap;color:#334155}
+    .sheet .meta span{background:#f1f5f9;padding:6px 10px;border-radius:999px;font-size:12px}
+    @media print{
+      body{background:#fff}
+      .modal{position:static;display:block;background:#fff;padding:0}
+      .sheet{width:100%;box-shadow:none;border:none}
+      .sheet header .btn{display:none}
+      header,.grid,footer{display:none}
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <div class="title">
+        <span class="badge">Demo</span>
+        <h1>2D | 3D ရောင်းချက် စနစ်</h1>
+      </div>
+      <div class="actions">
+        <button class="btn ghost" id="btnVoucher">ဘောင်ချာ ထုတ်မယ်</button>
+        <button class="btn danger" id="btnClearAll">အားလုံးဖျက်</button>
+      </div>
+    </header>
+
+    <div class="grid">
+      <!-- Left: Form & Items -->
+      <section class="card">
+        <div class="body">
+          <h2>အချက်အလက် ဖြည့်သွင်း</h2>
+          <div class="row">
+            <div class="field">
+              <label>အမျိုးအစား</label>
+              <select id="gameType">
+                <option value="2D">2D</option>
+                <option value="3D">3D (တွတ်သုံးလုံး)</option>
+              </select>
+            </div>
+            <div class="field" id="twoDSubField">
+              <label>2D အမျိုးအစား</label>
+              <select id="twoDType">
+                <option value="အပေါ်">2D အပေါ်</option>
+                <option value="အောက်">2D အောက်</option>
+              </select>
+            </div>
+            <div class="field">
+              <label>ဂဏန်း</label>
+              <input id="numberInput" type="text" placeholder="ဥပမာ - 12 သို့ 123" />
+            </div>
+            <div class="field">
+              <label>အရေအတွက်</label>
+              <input id="qtyInput" type="number" min="1" value="1" />
+            </div>
+            <div class="field">
+              <label>တစ်ခုချင်းဈေး (MMK)</label>
+              <input id="priceInput" type="number" min="0" value="1000" />
+            </div>
+          </div>
+          <div class="actions" style="margin-top:12px">
+            <button class="btn primary" id="btnAdd">စာရင်းထည့်မယ်</button>
+          </div>
+
+          <div style="margin-top:18px">
+            <table>
+              <thead>
+                <tr>
+                  <th>#</th>
+                  <th>အမျိုးအစား</th>
+                  <th>ဂဏန်း</th>
+                  <th>အရေအတွက်</th>
+                  <th>တစ်ခုဈေး</th>
+                  <th>စုစုပေါင်း</th>
+                  <th></th>
+                </tr>
+              </thead>
+              <tbody id="itemsBody"></tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- Right: Stats -->
+      <aside class="card">
+        <div class="body">
+          <h2>စာရင်း အနှစ်ချုပ်</h2>
+          <div class="split" style="margin-bottom:14px">
+            <div class="stat">
+              <h3>စုစုပေါင်းရောင်းထားသည့်ဂဏန်း</h3>
+              <div class="v" id="statCount">0</div>
+            </div>
+            <div class="stat">
+              <h3>စုစုပေါင်းရောင်းရငွေ (MMK)</h3>
+              <div class="v" id="statAmount">0</div>
+            </div>
+          </div>
+          <div class="list">
+            <div class="chip"><span class="k">အိုင်တမ်အရေအတွက်</span><strong id="statItems">0</strong></div>
+            <div class="chip"><span class="k">2D အပေါ်/အောက် စုစုပေါင်း</span><strong id="stat2D">0</strong></div>
+            <div class="chip"><span class="k">3D (တွတ်သုံးလုံး) စုစုပေါင်း</span><strong id="stat3D">0</strong></div>
+          </div>
+        </div>
+      </aside>
+    </div>
+
+    <footer>© 2025 2D/3D Demo — Local only (no server).</footer>
+  </div>
+
+  <!-- Voucher Modal -->
+  <div class="modal" id="voucherModal" aria-hidden="true">
+    <div class="sheet" role="dialog" aria-modal="true">
+      <header>
+        <h3>ရောင်းချေမှု ဘောင်ချာ</h3>
+        <div>
+          <button class="btn ghost" id="btnCloseModal">ပိတ်</button>
+          <button class="btn print" id="btnPrint">Print</button>
+        </div>
+      </header>
+      <div class="content">
+        <div class="meta" style="margin-bottom:10px">
+          <span id="voucherId">Voucher: -</span>
+          <span id="voucherDate">နေ့စွဲ: -</span>
+          <span id="voucherItems">အိုင်တမ်: 0</span>
+        </div>
+        <table>
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>အမျိုးအစား</th>
+              <th>ဂဏန်း</th>
+              <th>အရေအတွက်</th>
+              <th>တစ်ခုဈေး</th>
+              <th>စုစုပေါင်း</th>
+            </tr>
+          </thead>
+          <tbody id="voucherBody"></tbody>
+          <tfoot>
+            <tr>
+              <td colspan="5" style="text-align:right">စုစုပေါင်းဂဏန်း</td>
+              <td id="voucherCount">0</td>
+            </tr>
+            <tr>
+              <td colspan="5" style="text-align:right">စုစုပေါင်းငွေ (MMK)</td>
+              <td id="voucherTotal">0</td>
+            </tr>
+          </tfoot>
+        </table>
+        <p class="muted" style="margin-top:8px">မှတ်ချက် — ဒီဘောင်ချာကို Print လုပ်ပြီး သိမ်းထားနိုင်ပါသည်။</p>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const el = (id)=>document.getElementById(id);
+    const fmt = (n)=>Number(n||0).toLocaleString('en-US');
+
+    const items = [];
+    const gameType = el('gameType');
+    const twoDType = el('twoDType');
+    const twoDSubField = el('twoDSubField');
+    const numberInput = el('numberInput');
+    const qtyInput = el('qtyInput');
+    const priceInput = el('priceInput');
+    const itemsBody = el('itemsBody');
+
+    const statCount = el('statCount');
+    const statAmount = el('statAmount');
+    const statItems = el('statItems');
+    const stat2D = el('stat2D');
+    const stat3D = el('stat3D');
+
+    const btnAdd = el('btnAdd');
+    const btnClearAll = el('btnClearAll');
+    const btnVoucher = el('btnVoucher');
+
+    const modal = el('voucherModal');
+    const btnCloseModal = el('btnCloseModal');
+    const btnPrint = el('btnPrint');
+    const voucherId = el('voucherId');
+    const voucherDate = el('voucherDate');
+    const voucherItems = el('voucherItems');
+    const voucherBody = el('voucherBody');
+    const voucherCount = el('voucherCount');
+    const voucherTotal = el('voucherTotal');
+
+    function refresh() {
+      // table
+      itemsBody.innerHTML = '';
+      items.forEach((it, i)=>{
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td>${i+1}</td>
+          <td><span class="pill">${it.kind}</span></td>
+          <td>${it.number}</td>
+          <td>${fmt(it.qty)}</td>
+          <td>${fmt(it.price)}</td>
+          <td>${fmt(it.qty * it.price)}</td>
+          <td><button class="btn danger" data-i="${i}">ဖျက်</button></td>
+        `;
+        itemsBody.appendChild(tr);
+      });
+      // stats
+      const totalQty = items.reduce((a,c)=>a + Number(c.qty||0),0);
+      const totalAmt = items.reduce((a,c)=>a + (Number(c.qty||0)*Number(c.price||0)),0);
+      const total2D = items.filter(x=>x.game==='2D').reduce((a,c)=>a + (c.qty*c.price),0);
+      const total3D = items.filter(x=>x.game==='3D').reduce((a,c)=>a + (c.qty*c.price),0);
+      statCount.textContent = fmt(totalQty);
+      statAmount.textContent = fmt(totalAmt);
+      statItems.textContent = fmt(items.length);
+      stat2D.textContent = fmt(total2D);
+      stat3D.textContent = fmt(total3D);
+
+      // bind delete
+      itemsBody.querySelectorAll('button[data-i]').forEach(b=>{
+        b.onclick = ()=>{ items.splice(Number(b.dataset.i),1); refresh(); };
+      });
+    }
+
+    function validateNumber(num, game){
+      if(!num) return false;
+      if(game==='2D'){ return /^\d{2}$/.test(num); }
+      if(game==='3D'){
