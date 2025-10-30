@@ -1,0 +1,716 @@
+<!DOCTYPE html>
+<html lang="my">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>2D / 3D ရောင်းချက် • Reverse • Bulk • Voucher + Summary (Auto PDF/PNG)</title>
+<style>
+:root{
+  --bg:#0f172a; --panel:#0b1220; --ink:#e5e7eb; --soft:#9aa4b2;
+  --line:rgba(255,255,255,.10); --cyan:#22d3ee; --sky:#38bdf8;
+  --red:#ef4444; --ok:#10b981;
+}
+*{box-sizing:border-box}
+body{margin:0;background:linear-gradient(180deg,#081022,#0f172a 60%);color:var(--ink);
+  font-family:system-ui,-apple-system,Segoe UI,Inter,Roboto,Helvetica,Arial,"Noto Sans Myanmar",sans-serif}
+.wrap{max-width:1100px;margin:auto;padding:28px}
+header{display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;gap:10px;flex-wrap:wrap}
+h1{margin:0;font-size:20px}
+.badge{background:linear-gradient(90deg,var(--cyan),var(--sky));color:#001018;padding:6px 10px;border-radius:999px;font-weight:700;font-size:12px}
+.grid{display:grid;grid-template-columns:1.05fr .95fr;gap:16px}
+@media (max-width:980px){.grid{grid-template-columns:1fr}}
+.card{background:linear-gradient(180deg,rgba(255,255,255,.04),rgba(255,255,255,.02));border:1px solid var(--line);border-radius:16px;box-shadow:0 8px 20px rgba(0,0,0,.35)}
+.card .body{padding:16px}
+label{display:block;color:var(--soft);font-size:12px;margin:0 0 6px 6px}
+select,textarea,input{width:100%;padding:12px;border-radius:12px;border:1px solid var(--line);background:var(--panel);color:var(--ink);outline:none}
+textarea{min-height:92px;resize:vertical}
+.row{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px}
+.row2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+@media (max-width:760px){.row{grid-template-columns:1fr} .row2{grid-template-columns:1fr}}
+.switch{display:flex;align-items:center;gap:8px}
+.actions{display:flex;gap:10px;flex-wrap:wrap}
+.btn{padding:12px 14px;border-radius:12px;border:1px solid var(--line);background:#1f2937;color:#fff;cursor:pointer}
+.btn:hover{filter:brightness(1.06)}
+.btn.primary{background:linear-gradient(90deg,var(--cyan),var(--sky));color:#001018;border:0;font-weight:800}
+.btn.ghost{background:transparent}
+.btn.danger{background:rgba(239,68,68,.12);border-color:rgba(239,68,68,.45);color:#fecaca}
+table{width:100%;border-collapse:separate;border-spacing:0 8px}
+thead th{font-size:12px;color:var(--soft);text-align:left;padding:0 10px}
+tbody td{padding:10px;background:rgba(255,255,255,.03);border-top:1px solid var(--line);border-bottom:1px solid var(--line);vertical-align:middle}
+tbody tr td:first-child{border-left:1px solid var(--line);border-top-left-radius:12px;border-bottom-left-radius:12px}
+tbody tr td:last-child{border-right:1px solid var(--line);border-top-right-radius:12px;border-bottom-right-radius:12px}
+.right{text-align:right}
+.priceCell input{width:110px}
+.pill{padding:4px 8px;border-radius:999px;border:1px solid var(--line);background:rgba(255,255,255,.05);font-size:12px}
+.stats{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px}
+@media (max-width:980px){.stats{grid-template-columns:1fr}}
+.stat{padding:14px;border:1px solid var(--line);border-radius:14px;background:rgba(34,211,238,.06)}
+.stat h3{margin:0 0 6px 0;font-size:12px;color:#bfe1ff}
+.stat .v{font-size:22px;font-weight:800}
+footer{margin-top:16px;color:var(--soft);font-size:12px;text-align:center}
+/* Preview sheets */
+.voucher .sheet,.summary .sheet{background:#fff;color:#111;border-radius:14px;border:1px solid #e5e7eb;overflow:hidden}
+.voucher header{background:#e0f2fe;color:#082f49;padding:10px 14px;display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap}
+.voucher .content{padding:14px}
+.voucher table{width:100%;border-collapse:collapse}
+.voucher th,.voucher td{padding:8px;border-bottom:1px dashed #e5e7eb;text-align:left;color:#111}
+.voucher .meta{display:flex;gap:8px;flex-wrap:wrap;margin:8px 0}
+.voucher .meta .pill{background:#f1f5f9;border-color:#e5e7eb;color:#0f172a}
+.note{color:#94a3b8;font-size:12px}
+.summary header{background:#dcfce7;color:#052e1c;padding:10px 14px;display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap}
+.summary .content{padding:14px}
+.summary table{width:100%;border-collapse:collapse}
+.summary th,.summary td{padding:8px;border-bottom:1px dashed #e5e7eb;text-align:left;color:#111}
+@media print{ /* not used for auto download but keep fallback */
+  body{background:#fff}
+  .wrap{padding:0;max-width:none}
+  header,.grid,.actions.global,footer{display:none}
+  body[data-print="voucher"] .voucher{display:block}
+  body[data-print="voucher"] .summary{display:none}
+  body[data-print="summary"] .voucher{display:none}
+  body[data-print="summary"] .summary{display:block}
+  .voucher .sheet,.summary .sheet{box-shadow:none;border:0;border-radius:0}
+}
+
+/* Floating language button */
+.lang-toggle {
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  z-index: 1000;
+  background: linear-gradient(90deg, var(--cyan), var(--sky));
+  color: #001018;
+  border: none;
+  border-radius: 50%;
+  width: 60px;
+  height: 60px;
+  font-weight: bold;
+  font-size: 14px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform 0.2s;
+}
+
+.lang-toggle:hover {
+  transform: scale(1.1);
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1 data-lang="title">2D / 3D ရောင်းဇယား (Reverse & Bulk) — Voucher + Summary (Auto PDF/PNG)</h1>
+    <span class="badge" data-lang="badge">Auto-Save • Refresh မပျက် • Auto-Download PDF/PNG</span>
+  </header>
+
+  <div class="grid">
+    <!-- LEFT: Inputs (Cart) -->
+    <section class="card">
+      <div class="body">
+        <div class="row2">
+          <div>
+            <label data-lang="category">အမျိုးအစား</label>
+            <select id="game">
+              <option value="2D">2D</option>
+              <option value="3D">3D</option>
+            </select>
+          </div>
+          <div id="twoDOptWrap">
+            <label data-lang="2dOption">2D Option</label>
+            <select id="twoDOpt">
+              <option value="TOP" data-lang="top">အပေါ်</option>
+              <option value="BOTTOM" data-lang="bottom">အောက်</option>
+              <option value="BOTH" data-lang="both">အပေါ် + အောက်</option>
+            </select>
+          </div>
+          <div id="threeDOptWrap" style="display:none">
+            <label data-lang="3dOption">3D Option</label>
+            <select id="threeDOpt">
+              <option value="STRAIGHT" data-lang="straight">3D ဒဲ့ </option>
+              <option value="REVERSE2" data-lang="reverse2">တွတ်သုံးလုံး</option>
+              <option value="PERM6" data-lang="perm6">အပြန်</option>
+            </select>
+          </div>
+          <div class="switch">
+            <input type="checkbox" id="reverseToggle">
+            <label for="reverseToggle" data-lang="reverseToggle">Reverse ထည့် (2D 12↔21)</label>
+          </div>
+        </div>
+
+        <div style="margin-top:10px">
+          <label data-lang="numbersLabel">Numbers (space/comma/newline ဖြင့် အများကြီး ထည့်ပါ)</label>
+          <textarea id="bulk" data-lang-placeholder="numbersPlaceholder" placeholder="ဥပမာ:\n2D — 12 34 56\n3D — 123, 456, 789"></textarea>
+        </div>
+
+        <div class="actions" style="margin-top:10px">
+          <button class="btn primary" id="btnAdd" data-lang="addNumbers">Add Numbers</button>
+          <button class="btn ghost" id="btnSample" data-lang="sample">Sample ထည့်</button>
+          <button class="btn danger" id="btnClearAll" data-lang="deleteAll">Delete All (Cart only)</button>
+        </div>
+
+        <p class="pill" style="margin-top:10px" data-lang="priceNote">ဂဏန်းတခုစီမှာ ထိုးကြေး/ဈေးကို အောက်က ဇယားထဲမှာ တစ်ခုချင်း ပြင်နိုင်ပါတယ်</p>
+      </div>
+    </section>
+
+    <!-- RIGHT: Cart Stats + Exports -->
+    <aside class="card">
+      <div class="body">
+        <h3 style="margin-top:0" data-lang="cartSummary">Cart အနှစ်ချုပ်</h3>
+        <div class="stats">
+          <div class="stat"><h3 data-lang="uniqueNumbers">ဂဏန်း (unique)</h3><div class="v" id="statNums">0</div></div>
+          <div class="stat"><h3 data-lang="items">စျေးအိုင်တမ်</h3><div class="v" id="statItems">0</div></div>
+          <div class="stat"><h3 data-lang="totalTHB">စုစုပေါင်းငွေ (THB)</h3><div class="v" id="statTotal">0</div></div>
+        </div>
+        <div class="actions global" style="margin-top:10px;flex-wrap:wrap">
+          <button class="btn" id="btnSaveVoucherPdf" data-lang="saveVoucherPdf">ဘောင်ချာ သိမ်းမည် (PDF)</button>
+          <button class="btn" id="btnSaveVoucherPng" data-lang="saveVoucherPng">ဘောင်ချာ Image (PNG)</button>
+        </div>
+        <p class="note" data-lang="voucherNote">Voucher ကို နှိပ်လျှင် — Summary ထဲသို့ထည့်ပြီး PDF/PNG **အလိုအလျောက်ဒေါင်းလုဒ်** ဖြစ်မည်။ Cart မဖျက်ပါ။</p>
+      </div>
+    </aside>
+  </div>
+
+  <!-- Cart Items Table -->
+  <section class="card" style="margin-top:14px">
+    <div class="body">
+      <table>
+        <thead>
+          <tr>
+            <th>#</th><th data-lang="tableGame">Game</th><th data-lang="tableNumber">Number</th><th data-lang="tableDetail">Detail</th>
+            <th class="right" data-lang="tablePrice">Price (THB)</th><th></th>
+          </tr>
+        </thead>
+        <tbody id="tbody"></tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- Voucher Preview -->
+  <section class="voucher" style="margin-top:14px">
+    <div class="sheet" id="voucherSheet">
+      <header>
+        <strong data-lang="voucherTitle">ရောင်းချေမှု ဘောင်ချာ</strong>
+        <span id="vDate">-</span>
+      </header>
+      <div class="content">
+        <div class="meta">
+          <span id="vId" class="pill">Voucher: -</span>
+          <span class="pill" data-lang="voucherItems">Items: <span id="vItems">0</span></span>
+          <span class="pill" data-lang="voucherTotal">Total: <span id="vTotal">0</span> THB</span>
+        </div>
+        <div class="row2" style="margin-top:6px">
+          <div><label data-lang="customerName">Customer Name</label><input id="custName" placeholder="Customer Name"></div>
+          <div><label data-lang="noteOptional">Note (optional)</label><input id="custNote" data-lang-placeholder="exampleNote" placeholder="e.g. Paid by KBZ Pay"></div>
+        </div>
+        <table style="margin-top:10px">
+          <thead>
+            <tr><th>#</th><th data-lang="vTableGame">Game</th><th data-lang="vTableNumber">Number</th><th data-lang="vTableDetail">Detail</th><th class="right" data-lang="vTablePrice">Price (THB)</th></tr>
+          </thead>
+          <tbody id="vBody"></tbody>
+          <tfoot>
+            <tr><td colspan="4" class="right" style="font-weight:700" data-lang="totalComplete">စုစုပေါင်း (ထိုးကြေး အပြီး)</td><td class="right" id="vTotalFoot" style="font-weight:700">0</td></tr>
+          </tfoot>
+        </table>
+        <p class="note" style="margin-top:8px" data-lang="autoDownload">Auto download — PDF/PNG ကို Downloads (Gallery သို့ PNG)</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- Session Summary -->
+  <section class="summary" style="margin-top:14px">
+    <div class="sheet" id="summarySheet">
+      <header>
+        <strong data-lang="summaryTitle">နေ့လုံး စားရင်း (Session Summary)</strong>
+        <span id="sDate">-</span>
+      </header>
+      <div class="content">
+        <div class="meta" style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:8px">
+          <span class="pill" data-lang="sNumbers">Numbers: <span id="sNums">0</span></span>
+          <span class="pill" data-lang="sItems">Items: <span id="sItems">0</span></span>
+          <span class="pill" data-lang="sTotal">Total: <span id="sTotal">0</span> THB</span>
+        </div>
+        <div class="actions" style="margin:8px 0;flex-wrap:wrap">
+          <button class="btn" id="btnSummaryPdf" data-lang="downloadPdfSummary">Download PDF (Summary)</button>
+          <button class="btn" id="btnSummaryPng" data-lang="downloadPngSummary">Download Image (Summary)</button>
+          <button class="btn danger" id="btnSummaryDelete" data-lang="deleteSummary">Delete Summary</button>
+        </div>
+        <table>
+          <thead>
+            <tr><th>#</th><th data-lang="sTableGame">Game</th><th data-lang="sTableNumber">Number</th><th data-lang="sTableDetail">Detail</th><th class="right" data-lang="sTablePrice">Price (THB)</th></tr>
+          </thead>
+          <tbody id="sBody"></tbody>
+        </table>
+        <p class="note" style="margin-top:8px" data-lang="summaryNote">Summary ကို Delete Summary နှိပ်မှပဲ ပျက် — Cart Delete All သည် Summary မထိ</p>
+      </div>
+    </div>
+  </section>
+
+  <footer data-lang="footer">© 2025 • 2D/3D • Reverse • Bulk • Voucher & Summary — Auto PDF/PNG • Local Only</footer>
+</div>
+
+<!-- Floating Language Toggle Button -->
+<button class="lang-toggle" id="langToggle">TH</button>
+
+<script>
+const $ = (id)=>document.getElementById(id);
+const fmt = (n)=>Number(n||0).toLocaleString('en-US');
+
+/* Storage keys */
+const CART_KEY='two3dCart_v7', VOUCHER_META_KEY='two3dVoucherMeta_v7', DAY_KEY='two3dDay_v7', LANG_KEY='two3dLang_v1';
+
+/* Language Support */
+const translations = {
+  my: {
+    title: "2D / 3D ရောင်းချက် (Reverse & Bulk) — Voucher + Summary (Auto PDF/PNG)",
+    badge: "Auto-Save • Refresh မပျက် • Auto-Download PDF/PNG",
+    category: "အမျိုးအစား",
+    "2dOption": "2D Option",
+    top: "အပေါ်",
+    bottom: "အောက်",
+    both: "အပေါ် + အောက်",
+    "3dOption": "3D Option",
+    straight: "3D ဒဲ့",
+    reverse2: "တွတ်သုံးလုံး",
+    perm6: "အပြန်",
+    reverseToggle: "Reverse ထည့် (2D 12↔21)",
+    numbersLabel: "Numbers (space/comma/newline ဖြင့် အများကြီး ထည့်ပါ)",
+    numbersPlaceholder: "ဥပမာ:\n2D — 12 34 56\n3D — 123, 456, 789",
+    addNumbers: "Add Numbers",
+    sample: "Sample ထည့်",
+    deleteAll: "Delete All (Cart only)",
+    priceNote: "ဂဏန်းတခုစီမှာ ထိုးကြေး/ဈေးကို အောက်က ဇယားထဲမှာ တစ်ခုချင်း ပြင်နိုင်ပါတယ်",
+    cartSummary: "Cart အနှစ်ချုပ်",
+    uniqueNumbers: "ဂဏန်း (unique)",
+    items: "စျေးအိုင်တမ်",
+    totalTHB: "စုစုပေါင်းငွေ (THB)",
+    saveVoucherPdf: "ဘောင်ချာ သိမ်းမည် (PDF)",
+    saveVoucherPng: "ဘောင်ချာ Image (PNG)",
+    voucherNote: "Voucher ကို နှိပ်လျှင် — Summary ထဲသို့ထည့်ပြီး PDF/PNG **အလိုအလျောက်ဒေါင်းလုဒ်** ဖြစ်မည်။ Cart မဖျက်ပါ။",
+    tableGame: "Game",
+    tableNumber: "Number",
+    tableDetail: "Detail",
+    tablePrice: "Price (THB)",
+    voucherTitle: "ရောင်းချေမှု ဘောင်ချာ",
+    voucherItems: "Items:",
+    voucherTotal: "Total:",
+    customerName: "Customer Name",
+    noteOptional: "Note (optional)",
+    exampleNote: "e.g. Paid by KBZ Pay",
+    vTableGame: "Game",
+    vTableNumber: "Number",
+    vTableDetail: "Detail",
+    vTablePrice: "Price (THB)",
+    totalComplete: "စုစုပေါင်း (ထိုးကြေး အပြီး)",
+    autoDownload: "Auto download — PDF/PNG ကို Downloads (Gallery သို့ PNG)",
+    summaryTitle: "နေ့လုံး စားရင်း (Session Summary)",
+    sNumbers: "Numbers:",
+    sItems: "Items:",
+    sTotal: "Total:",
+    downloadPdfSummary: "Download PDF (Summary)",
+    downloadPngSummary: "Download Image (Summary)",
+    deleteSummary: "Delete Summary",
+    sTableGame: "Game",
+    sTableNumber: "Number",
+    sTableDetail: "Detail",
+    sTablePrice: "Price (THB)",
+    summaryNote: "Summary ကို Delete Summary နှိပ်မှပဲ ပျက် — Cart Delete All သည် Summary မထိ",
+    footer: "© 2025 • 2D/3D • Reverse • Bulk • Voucher & Summary — Auto PDF/PNG • Local Only"
+  },
+  th: {
+    title: "2D / 3D ขาย (Reverse & Bulk) — Voucher + Summary (Auto PDF/PNG)",
+    badge: "บันทึกอัตโนมัติ • รีเฟรชไม่หาย • ดาวน์โหลด PDF/PNG อัตโนมัติ",
+    category: "ประเภท",
+    "2dOption": "ตัวเลือก 2D",
+    top: "ด้านบน",
+    bottom: "ด้านล่าง",
+    both: "ด้านบน + ด้านล่าง",
+    "3dOption": "ตัวเลือก 3D",
+    straight: "3D ตรง",
+    reverse2: "3 ตัวโต๊ต",
+    perm6: "3 ตัวกลับเลข",
+    reverseToggle: "เพิ่มย้อนกลับ (2D 12↔21)",
+    numbersLabel: "ตัวเลข (ใส่หลายตัวด้วย space/comma/newline)",
+    numbersPlaceholder: "ตัวอย่าง:\n2D — 12 34 56\n3D — 123, 456, 789",
+    addNumbers: "เพิ่มตัวเลข",
+    sample: "เพิ่มตัวอย่าง",
+    deleteAll: "ลบทั้งหมด (เฉพาะตะกร้า)",
+    priceNote: "คุณสามารถแก้ไขราคา/ราคาต่อตัวเลขแต่ละตัวในตารางด้านล่างทีละรายการ",
+    cartSummary: "สรุปตะกร้า",
+    uniqueNumbers: "ตัวเลข (ไม่ซ้ำ)",
+    items: "รายการสินค้า",
+    totalTHB: "ยอดรวมทั้งหมด (THB)",
+    saveVoucherPdf: "บันทึก Voucher (PDF)",
+    saveVoucherPng: "Voucher รูปภาพ (PNG)",
+    voucherNote: "เมื่อกด Voucher — จะเพิ่มลงใน Summary และดาวน์โหลด PDF/PNG **อัตโนมัติ** ไม่ลบตะกร้า",
+    tableGame: "เกม",
+    tableNumber: "ตัวเลข",
+    tableDetail: "รายละเอียด",
+    tablePrice: "ราคา (THB)",
+    voucherTitle: "ใบเสร็จรับเงิน",
+    voucherItems: "รายการ:",
+    voucherTotal: "รวม:",
+    customerName: "ชื่อลูกค้า",
+    noteOptional: "หมายเหตุ (ไม่จำเป็น)",
+    exampleNote: "เช่น ชำระผ่าน KBZ Pay",
+    vTableGame: "เกม",
+    vTableNumber: "ตัวเลข",
+    vTableDetail: "รายละเอียด",
+    vTablePrice: "ราคา (THB)",
+    totalComplete: "ยอดรวม (ราคาเต็ม)",
+    autoDownload: "ดาวน์โหลดอัตโนมัติ — PDF/PNG ไปที่ Downloads (PNG ไปที่ Gallery)",
+    summaryTitle: "สรุปรายวัน (Session Summary)",
+    sNumbers: "ตัวเลข:",
+    sItems: "รายการ:",
+    sTotal: "รวม:",
+    downloadPdfSummary: "ดาวน์โหลด PDF (Summary)",
+    downloadPngSummary: "ดาวน์โหลดรูปภาพ (Summary)",
+    deleteSummary: "ลบ Summary",
+    sTableGame: "เกม",
+    sTableNumber: "ตัวเลข",
+    sTableDetail: "รายละเอียด",
+    sTablePrice: "ราคา (THB)",
+    summaryNote: "Summary จะหายเมื่อกด Delete Summary — Cart Delete All ไม่กระทบ Summary",
+    footer: "© 2025 • 2D/3D • Reverse • Bulk • Voucher & Summary — Auto PDF/PNG • Local Only"
+  }
+};
+
+let currentLang = 'my';
+
+function setLanguage(lang) {
+  currentLang = lang;
+  localStorage.setItem(LANG_KEY, lang);
+  
+  // Update all elements with data-lang attribute
+  document.querySelectorAll('[data-lang]').forEach(el => {
+    const key = el.getAttribute('data-lang');
+    if (translations[lang][key]) {
+      el.textContent = translations[lang][key];
+    }
+  });
+  
+  // Update all elements with data-lang-placeholder attribute
+  document.querySelectorAll('[data-lang-placeholder]').forEach(el => {
+    const key = el.getAttribute('data-lang-placeholder');
+    if (translations[lang][key]) {
+      el.placeholder = translations[lang][key];
+    }
+  });
+  
+  // Update select options
+  document.querySelectorAll('select option').forEach(option => {
+    if (option.getAttribute('data-lang')) {
+      const key = option.getAttribute('data-lang');
+      if (translations[lang][key]) {
+        option.textContent = translations[lang][key];
+      }
+    }
+  });
+  
+  // Update language toggle button
+  $('langToggle').textContent = lang === 'my' ? 'TH' : 'MY';
+  
+  // Re-render cart to update table headers
+  renderCart();
+  drawVoucher();
+  renderSummary();
+}
+
+function loadLanguage() {
+  try {
+    const savedLang = localStorage.getItem(LANG_KEY);
+    if (savedLang) {
+      currentLang = savedLang;
+    }
+  } catch(e) {}
+  setLanguage(currentLang);
+}
+
+/* States */
+const cart={rows:[]}, day={rows:[]}, meta={custName:'', custNote:''};
+
+/* Elements */
+const game=$('game'), twoDOptWrap=$('twoDOptWrap'), threeDOptWrap=$('threeDOptWrap'),
+      twoDOpt=$('twoDOpt'), threeDOpt=$('threeDOpt'), reverseToggle=$('reverseToggle'),
+      bulk=$('bulk'), btnAdd=$('btnAdd'), btnSample=$('btnSample'), btnClearAll=$('btnClearAll'),
+      tbody=$('tbody'), statNums=$('statNums'), statItems=$('statItems'), statTotal=$('statTotal');
+const vBody=$('vBody'), vTotal=$('vTotal'), vTotalFoot=$('vTotalFoot'), vItems=$('vItems'), vDate=$('vDate'), vId=$('vId'),
+      custName=$('custName'), custNote=$('custNote'),
+      btnSaveVoucherPdf=$('btnSaveVoucherPdf'), btnSaveVoucherPng=$('btnSaveVoucherPng');
+const sBody=$('sBody'), sTotal=$('sTotal'), sItems=$('sItems'), sNums=$('sNums'), sDate=$('sDate'),
+      btnSummaryPdf=$('btnSummaryPdf'), btnSummaryPng=$('btnSummaryPng'), btnSummaryDelete=$('btnSummaryDelete'),
+      langToggle=$('langToggle');
+
+/* UI helpers */
+function setModeUI(){
+  const is2D = game.value==='2D';
+  twoDOptWrap.style.display = is2D ? 'block' : 'none';
+  threeDOptWrap.style.display = is2D ? 'none' : 'block';
+  reverseToggle.disabled = !is2D;
+  reverseToggle.title = is2D ? '2D Reverse toggle' : '3D Options မှာရွေးပါ';
+}
+game.onchange=setModeUI;
+
+function parseNumbers(raw){
+  const list = raw.split(/[^0-9]+/).filter(Boolean);
+  const wanted = (game.value==='2D') ? 2 : 3;
+  const cleaned = list.filter(n=>n.length===wanted).map(n=>n.slice(0,wanted));
+  const seen = new Set(), out=[]; for(const n of cleaned){ if(!seen.has(n)){ seen.add(n); out.push(n);} } return out;
+}
+function permute3(n){ const a=n[0],b=n[1],c=n[2]; return [...new Set([a+b+c,a+c+b,b+a+c,b+c+a,c+a+b,c+b+a])]; }
+function pushCart(game,number,detail,price){ cart.rows.push({game,number,detail,price:Number(price||0)}); }
+
+function addRowsFromBulk(){
+  const nums=parseNumbers(bulk.value);
+  if(nums.length===0){ alert(currentLang === 'my' ? 'ထည့်မည့် ဂဏန်းတွေ (digit အလိုက်) မတွေ့ပါ' : 'ไม่พบตัวเลขที่ต้องการเพิ่ม (ตามหลัก)'); return; }
+  const is2D = game.value==='2D', opt2D=twoDOpt.value, opt3D=threeDOpt.value, wantReverse=reverseToggle.checked;
+  for(const n of nums){
+    if(is2D){
+      if(opt2D==='TOP'||opt2D==='BOTH') pushCart('2D',n,currentLang === 'my' ? 'အပေါ်' : 'ด้านบน',0);
+      if(opt2D==='BOTTOM'||opt2D==='BOTH') pushCart('2D',n,currentLang === 'my' ? 'အောက်' : 'ด้านล่าง',0);
+      if(wantReverse){
+        const r=n.split('').reverse().join('');
+        if(opt2D==='TOP'||opt2D==='BOTH') pushCart('2D',r,currentLang === 'my' ? 'အပေါ် (Reverse)' : 'ด้านบน (ย้อนกลับ)',0);
+        if(opt2D==='BOTTOM'||opt2D==='BOTH') pushCart('2D',r,currentLang === 'my' ? 'အောက် (Reverse)' : 'ด้านล่าง (ย้อนกลับ)',0);
+      }
+    }else{
+      if(opt3D==='STRAIGHT'){ pushCart('3D',n,currentLang === 'my' ? '3D ဒဲ့' : '3D ตรง',0); }
+      else if(opt3D==='REVERSE2'){ const rev=n.split('').reverse().join(''); pushCart('3D',n,currentLang === 'my' ? '3D တွတ်' : '3 ตัวโต๊ต',0); if(rev!==n) pushCart('3D',rev,currentLang === 'my' ? '3D တွတ်' : '3 ตัวโต๊ต',0); }
+      else { for(const p of permute3(n)) pushCart('3D',p,currentLang === 'my' ? 'အပြန်' : '3 ตัวกลับเลข',0); }
+    }
+  }
+  bulk.value=''; saveCart(); renderCart();
+}
+
+function renderCart(){
+  tbody.innerHTML='';
+  cart.rows.forEach((row,i)=>{
+    const tr=document.createElement('tr');
+    tr.innerHTML=`
+      <td>${i+1}</td><td>${row.game}</td><td><strong>${row.number}</strong></td>
+      <td>${row.detail}</td>
+      <td class="right priceCell"><input type="number" min="0" value="${row.price}" data-i="${i}"/></td>
+      <td class="right"><button class="btn danger" data-del="${i}">${currentLang === 'my' ? 'ဖျက်' : 'ลบ'}</button></td>`;
+    tbody.appendChild(tr);
+  });
+  tbody.querySelectorAll('input[type="number"][data-i]').forEach(inp=>{
+    inp.oninput=e=>{ const i=Number(e.target.dataset.i); cart.rows[i].price=Number(e.target.value||0); saveCart(); drawCartStats(); };
+  });
+  tbody.querySelectorAll('button[data-del]').forEach(btn=>{
+    btn.onclick=()=>{ const i=Number(btn.dataset.del); cart.rows.splice(i,1); saveCart(); renderCart(); };
+  });
+  drawCartStats();
+  drawVoucher();
+}
+
+function drawCartStats(){
+  const total=cart.rows.reduce((a,c)=>a+Number(c.price||0),0);
+  const items=cart.rows.length, numsUnique=new Set(cart.rows.map(r=>r.number)).size;
+  statTotal.textContent=fmt(total); statItems.textContent=String(items); statNums.textContent=String(numsUnique);
+  drawVoucher();
+}
+
+/* Voucher preview */
+function drawVoucher(){
+  vBody.innerHTML='';
+  cart.rows.forEach((r,i)=>{
+    const tr=document.createElement('tr');
+    tr.innerHTML=`<td>${i+1}</td><td>${r.game}</td><td>${r.number}</td><td>${r.detail}</td><td class="right">${fmt(r.price)}</td>`;
+    vBody.appendChild(tr);
+  });
+  const total=cart.rows.reduce((a,c)=>a+Number(c.price||0),0);
+  vTotal.textContent=fmt(total); vTotalFoot.textContent=fmt(total); vItems.textContent=String(cart.rows.length);
+  const now=new Date(); vDate.textContent=now.toLocaleString();
+  vId.textContent=`V-${String(now.getFullYear()).slice(-2)}${String(now.getMonth()+1).padStart(2,'0')}${String(now.getDate()).padStart(2,'0')}-${String(cart.rows.length).padStart(3,'0')}`;
+}
+
+/* Summary (day log) */
+function renderSummary(){
+  sBody.innerHTML='';
+  day.rows.forEach((r,i)=>{
+    const tr=document.createElement('tr');
+    tr.innerHTML=`<td>${i+1}</td><td>${r.game}</td><td>${r.number}</td><td>${r.detail}</td><td class="right">${fmt(r.price)}</td>`;
+    sBody.appendChild(tr);
+  });
+  const total=day.rows.reduce((a,c)=>a+Number(c.price||0),0);
+  const items=day.rows.length, numsUnique=new Set(day.rows.map(r=>r.number)).size;
+  sTotal.textContent=fmt(total); sItems.textContent=String(items); sNums.textContent=String(numsUnique); sDate.textContent=new Date().toLocaleString();
+}
+
+/* Persist */
+function saveCart(){ try{ localStorage.setItem(CART_KEY, JSON.stringify(cart.rows)); meta.custName=custName.value||''; meta.custNote=custNote.value||''; localStorage.setItem(VOUCHER_META_KEY, JSON.stringify(meta)); }catch(e){} }
+function loadCart(){ try{ const raw=localStorage.getItem(CART_KEY); if(raw){ cart.rows=JSON.parse(raw)||[]; } const m=localStorage.getItem(VOUCHER_META_KEY); if(m){ const mm=JSON.parse(m)||{}; meta.custName=mm.custName||''; meta.custNote=mm.custNote||''; } }catch(e){} custName.value=meta.custName||''; custNote.value=meta.custNote||''; }
+function saveDay(){ try{ localStorage.setItem(DAY_KEY, JSON.stringify(day.rows)); }catch(e){} }
+function loadDay(){ try{ const raw=localStorage.getItem(DAY_KEY); if(raw){ day.rows=JSON.parse(raw)||[]; } }catch(e){} }
+
+/* ----------- Minimal PDF builder (text) ----------- */
+function makePDF(pages){
+  let pdf='%PDF-1.3\n'; const objs=[]; const add=o=>{objs.push(o); return objs.length;};
+  const fontId=add('<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>');
+  const kids=[]; const pageIds=[];
+  pages.forEach(pg=>{
+    const content = 'BT\n' + pg.lines.map(l=>`/F1 ${l.size||10} Tf\n${l.x} ${l.y} Td\n(${esc(l.text)}) Tj\n`).join('') + 'ET';
+    const stream = `<< /Length ${content.length} >>\nstream\n${content}\nendstream`;
+    const cid = add(stream);
+    const pid = add(`<< /Type /Page /Parent 0 0 R /MediaBox [0 0 595 842] /Resources << /Font << /F1 ${fontId} 0 R >> >> /Contents ${cid} 0 R >>`);
+    pageIds.push(pid); kids.push(`${pid} 0 R`);
+  });
+  const pagesId = add(`<< /Type /Pages /Kids [ ${kids.join(' ')} ] /Count ${kids.length} >>`);
+  pageIds.forEach(id=>{
+    objs[id-1]=objs[id-1].replace('/Parent 0 0 R',`/Parent ${pagesId} 0 R`);
+  });
+  const catalogId=add(`<< /Type /Catalog /Pages ${pagesId} 0 R >>`);
+  let xref='xref\n0 '+(objs.length+1)+'\n0000000000 65535 f \n', pos=pdf.length;
+  objs.forEach((o,i)=>{ const entry=`${i+1} 0 obj\n${o}\nendobj\n`; pdf+=entry; xref+=pad(pos)+' 00000 n \n'; pos=pdf.length; });
+  pdf+=xref+`trailer\n<< /Size ${objs.length+1} /Root ${catalogId} 0 R >>\nstartxref\n${pos}\n%%EOF`;
+  return pdf;
+  function pad(n){ let s=String(n); while(s.length<10)s='0'+s; return s; }
+  function esc(s){ return (s||'').replace(/\\/g,'\\\\').replace(/\(/g,'\\(').replace(/\)/g,'\\)').replace(/\r?\n/g,' '); }
+}
+function paginate(lines){
+  const pages=[]; let cur=[]; let y=800;
+  lines.forEach(l=>{
+    if(y<60){ pages.push({lines:cur}); cur=[]; y=800; }
+    cur.push({x:l.x||40,y, text:l.text, size:l.size||10}); y -= (l.size?18:16);
+  });
+  if(cur.length) pages.push({lines:cur}); return pages;
+}
+function buildVoucherPDFData(){
+  const lines=[]; const now=new Date().toLocaleString();
+  lines.push({text:currentLang === 'my' ? 'ရောင်းချေမှု ဘောင်ချာ' : 'ใบเสร็จรับเงิน', size:16});
+  lines.push({text:`Date: ${now}`});
+  lines.push({text:`Voucher: ${$('vId').textContent}`});
+  lines.push({text:`Customer: ${(custName.value||'-')}   Note: ${(custNote.value||'-')}`});
+  lines.push({text:''});
+  lines.push({text:'#   Game   Number   Detail                      Price(THB)'});
+  cart.rows.forEach((r,i)=>{ lines.push({text:`${String(i+1).padEnd(3)} ${r.game.padEnd(5)} ${r.number.padEnd(7)} ${r.detail.padEnd(25)} ${fmt(r.price)}`}); });
+  lines.push({text:''});
+  const total=cart.rows.reduce((a,c)=>a+Number(c.price||0),0);
+  lines.push({text:`${currentLang === 'my' ? 'Total (ထိုးကြေး အပြီး)' : 'ยอดรวม (ราคาเต็ม)'}: ${fmt(total)}`, size:12});
+  return paginate(lines);
+}
+function buildSummaryPDFData(){
+  const total=day.rows.reduce((a,c)=>a+Number(c.price||0),0);
+  const lines=[];
+  lines.push({text:currentLang === 'my' ? 'နေ့လုံး စားရင်း (Session Summary)' : 'สรุปรายวัน (Session Summary)', size:16});
+  lines.push({text:`Date: ${new Date().toLocaleString()}`});
+  lines.push({text:`Numbers: ${new Set(day.rows.map(r=>r.number)).size}   Items: ${day.rows.length}   Total: ${fmt(total)} THB`});
+  lines.push({text:''});
+  lines.push({text:'#   Game   Number   Detail                      Price(THB)'});
+  day.rows.forEach((r,i)=>{ lines.push({text:`${String(i+1).padEnd(3)} ${r.game.padEnd(5)} ${r.number.padEnd(7)} ${r.detail.padEnd(25)} ${fmt(r.price)}`}); });
+  return paginate(lines);
+}
+function downloadBlob(filename, blob){
+  const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download=filename;
+  document.body.appendChild(a); a.click(); setTimeout(()=>{ URL.revokeObjectURL(a.href); a.remove(); }, 300);
+}
+function downloadPDF(filename, pages){
+  const pdfText = makePDF(pages);
+  const blob = new Blob([pdfText], {type:'application/pdf'});
+  downloadBlob(filename, blob);
+}
+/* -------- Canvas PNG (text render; mobile-safe) -------- */
+function makePNGFromRows(title, header, rows){
+  const W=1200, LH=40, P=40; const H = P*2 + LH*(rows.length+6);
+  const c=document.createElement('canvas'); c.width=W; c.height=H; const ctx=c.getContext('2d');
+  ctx.fillStyle='#ffffff'; ctx.fillRect(0,0,W,H);
+  ctx.fillStyle='#111111'; ctx.font='bold 28px Arial'; ctx.fillText(title, P, P+10);
+  ctx.font='16px Arial'; ctx.fillText(`Date: ${new Date().toLocaleString()}`, P, P+LH);
+  ctx.font='bold 16px Arial';
+  const y0=P+LH*2; ctx.fillText(header, P, y0);
+  ctx.font='16px Arial';
+  let y=y0+LH*0.8;
+  rows.forEach(r=>{ ctx.fillText(r, P, y); y+=LH*0.8; });
+  return c;
+}
+function voucherRows(){
+  const rows=[];
+  rows.push(`#   Game   Number   Detail                      Price(THB)`);
+  cart.rows.forEach((r,i)=>rows.push(`${String(i+1).padEnd(3)} ${r.game.padEnd(5)} ${r.number.padEnd(7)} ${r.detail.padEnd(25)} ${fmt(r.price)}`));
+  rows.push('');
+  const total=cart.rows.reduce((a,c)=>a+Number(c.price||0),0);
+  rows.push(`${currentLang === 'my' ? 'Total (ထိုးကြေး အပြီး)' : 'ยอดรวม (ราคาเต็ม)'}: ${fmt(total)} THB`);
+  return rows;
+}
+function summaryRows(){
+  const rows=[];
+  const total=day.rows.reduce((a,c)=>a+Number(c.price||0),0);
+  rows.push(`#   Game   Number   Detail                      Price(THB)`);
+  day.rows.forEach((r,i)=>rows.push(`${String(i+1).padEnd(3)} ${r.game.padEnd(5)} ${r.number.padEnd(7)} ${r.detail.padEnd(25)} ${fmt(r.price)}`));
+  rows.push('');
+  rows.push(`Total: ${fmt(total)} THB`);
+  return rows;
+}
+function downloadPNG(canvas, name){
+  canvas.toBlob(b=>downloadBlob(name,b),'image/png');
+}
+
+/* Actions */
+btnAdd.onclick=addRowsFromBulk;
+btnClearAll.onclick=()=>{ if(confirm(currentLang === 'my' ? 'Cart (ဘောင်ချာ) အားလုံးဖျက်မလား? Summary မထိပါ။' : 'ลบตะกร้า (Voucher) ทั้งหมดใช่ไหม? ไม่กระทบ Summary')){ cart.rows.splice(0,cart.rows.length); localStorage.removeItem(CART_KEY); renderCart(); } };
+btnSample.onclick=()=>{ if(game.value==='2D'){ bulk.value="12 34 56, 78 90"; twoDOpt.value='BOTH'; reverseToggle.checked=true; } else { bulk.value="123 456, 789"; threeDOpt.value='PERM6'; } };
+custName.oninput=saveCart; custNote.oninput=saveCart;
+
+/* Save Voucher -> append to Summary + auto-download PDF/PNG (as clicked) */
+btnSaveVoucherPdf.onclick=()=>{
+  if(cart.rows.length===0){ alert(currentLang === 'my' ? 'Cart အချည်းနှီးပါ' : 'ตะกร้าว่างเปล่า'); return; }
+  const ts=Date.now(), name=(custName.value||'').trim(), note=(custNote.value||'').trim();
+  cart.rows.forEach(r=>{ day.rows.push({...r, ts, custName:name, note}); });
+  saveDay(); renderSummary();
+  const pages = buildVoucherPDFData();
+  downloadPDF(`voucher-${new Date().toISOString().slice(0,10)}.pdf`, pages);
+};
+btnSaveVoucherPng.onclick=()=>{
+  if(cart.rows.length===0){ alert(currentLang === 'my' ? 'Cart အချည်းနှီးပါ' : 'ตะกร้าว่างเปล่า'); return; }
+  const ts=Date.now(), name=(custName.value||'').trim(), note=(custNote.value||'').trim();
+  cart.rows.forEach(r=>{ day.rows.push({...r, ts, custName:name, note}); });
+  saveDay(); renderSummary();
+  const cv = makePNGFromRows(
+    currentLang === 'my' ? 'ရောင်းချေမှု ဘောင်ချာ' : 'ใบเสร็จรับเงิน', 
+    `Voucher: ${$('vId').textContent}  •  ${currentLang === 'my' ? 'Customer' : 'ลูกค้า'}: ${(custName.value||'-')}`, 
+    voucherRows()
+  );
+  downloadPNG(cv, `voucher-${new Date().toISOString().slice(0,10)}.png`);
+};
+
+/* Summary controls */
+btnSummaryPdf.onclick=()=>{
+  if(day.rows.length===0){ alert(currentLang === 'my' ? 'Summary မရှိသေးပါ' : 'ยังไม่มี Summary'); return; }
+  const pages = buildSummaryPDFData();
+  downloadPDF(`summary-${new Date().toISOString().slice(0,10)}.pdf`, pages);
+};
+btnSummaryPng.onclick=()=>{
+  if(day.rows.length===0){ alert(currentLang === 'my' ? 'Summary မရှိသေးပါ' : 'ยังไม่มี Summary'); return; }
+  const cs = makePNGFromRows(
+    currentLang === 'my' ? 'နေ့လုံး စားရင်း (Session Summary)' : 'สรุปรายวัน (Session Summary)', 
+    '', 
+    summaryRows()
+  );
+  downloadPNG(cs, `summary-${new Date().toISOString().slice(0,10)}.png`);
+};
+btnSummaryDelete.onclick=()=>{ if(confirm(currentLang === 'my' ? 'နေ့လုံး စားရင်းကို ဖျက်မလား? (Cart မထိ)' : 'ลบสรุปรายวันใช่ไหม? (ไม่กระทบตะกร้า)')){ day.rows.splice(0,day.rows.length); saveDay(); renderSummary(); } };
+
+/* Language toggle */
+langToggle.onclick = () => {
+  const newLang = currentLang === 'my' ? 'th' : 'my';
+  setLanguage(newLang);
+};
+
+/* Shortcuts */
+bulk.addEventListener('keydown', (e)=>{ if((e.metaKey||e.ctrlKey)&&e.key==='Enter'){ e.preventDefault(); addRowsFromBulk(); } });
+
+/* Init */
+function init(){ 
+  loadLanguage();
+  loadCart(); 
+  loadDay(); 
+  setModeUI(); 
+  renderCart(); 
+  renderSummary(); 
+}
+init();
+</script>
+</body>
+</html>
