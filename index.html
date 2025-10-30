@@ -1,0 +1,520 @@
+<!DOCTYPE html>
+<html lang="my">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>2D / 3D ရောင်းချက် • Reverse • Bulk • Voucher + Summary PDF</title>
+  <style>
+    :root{
+      --bg:#0f172a; --panel:#0b1220; --ink:#e5e7eb; --soft:#9aa4b2;
+      --line:rgba(255,255,255,.10); --cyan:#22d3ee; --sky:#38bdf8;
+      --red:#ef4444; --ok:#10b981;
+    }
+    *{box-sizing:border-box}
+    body{margin:0;background:linear-gradient(180deg,#081022,#0f172a 60%);color:var(--ink);
+      font-family:system-ui,-apple-system,Segoe UI,Inter,Roboto,Helvetica,Arial,"Noto Sans Myanmar",sans-serif}
+    .wrap{max-width:1100px;margin:auto;padding:28px}
+    header{display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;gap:10px;flex-wrap:wrap}
+    h1{margin:0;font-size:20px}
+    .badge{background:linear-gradient(90deg,var(--cyan),var(--sky));color:#001018;padding:6px 10px;border-radius:999px;font-weight:700;font-size:12px}
+    .grid{display:grid;grid-template-columns:1.05fr .95fr;gap:16px}
+    @media (max-width:980px){.grid{grid-template-columns:1fr}}
+    .card{background:linear-gradient(180deg,rgba(255,255,255,.04),rgba(255,255,255,.02));border:1px solid var(--line);border-radius:16px;box-shadow:0 8px 20px rgba(0,0,0,.35)}
+    .card .body{padding:16px}
+    label{display:block;color:var(--soft);font-size:12px;margin:0 0 6px 6px}
+    select,textarea,input{width:100%;padding:12px;border-radius:12px;border:1px solid var(--line);background:var(--panel);color:var(--ink);outline:none}
+    textarea{min-height:92px;resize:vertical}
+    .row{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px}
+    .row2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+    @media (max-width:760px){.row{grid-template-columns:1fr} .row2{grid-template-columns:1fr}}
+    .switch{display:flex;align-items:center;gap:8px}
+    .actions{display:flex;gap:10px;flex-wrap:wrap}
+    .btn{padding:12px 14px;border-radius:12px;border:1px solid var(--line);background:#1f2937;color:#fff;cursor:pointer}
+    .btn:hover{filter:brightness(1.06)}
+    .btn.primary{background:linear-gradient(90deg,var(--cyan),var(--sky));color:#001018;border:0;font-weight:800}
+    .btn.ghost{background:transparent}
+    .btn.danger{background:rgba(239,68,68,.12);border-color:rgba(239,68,68,.45);color:#fecaca}
+    table{width:100%;border-collapse:separate;border-spacing:0 8px}
+    thead th{font-size:12px;color:var(--soft);text-align:left;padding:0 10px}
+    tbody td{padding:10px;background:rgba(255,255,255,.03);border-top:1px solid var(--line);border-bottom:1px solid var(--line);vertical-align:middle}
+    tbody tr td:first-child{border-left:1px solid var(--line);border-top-left-radius:12px;border-bottom-left-radius:12px}
+    tbody tr td:last-child{border-right:1px solid var(--line);border-top-right-radius:12px;border-bottom-right-radius:12px}
+    .right{text-align:right}
+    .priceCell input{width:110px}
+    .pill{padding:4px 8px;border-radius:999px;border:1px solid var(--line);background:rgba(255,255,255,.05);font-size:12px}
+    .stats{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px}
+    @media (max-width:980px){.stats{grid-template-columns:1fr}}
+    .stat{padding:14px;border:1px solid var(--line);border-radius:14px;background:rgba(34,211,238,.06)}
+    .stat h3{margin:0 0 6px 0;font-size:12px;color:#bfe1ff}
+    .stat .v{font-size:22px;font-weight:800}
+    footer{margin-top:16px;color:var(--soft);font-size:12px;text-align:center}
+
+    /* Voucher */
+    .voucher .sheet{background:#fff;color:#111;border-radius:14px;border:1px solid #e5e7eb;overflow:hidden}
+    .voucher header{background:#e0f2fe;color:#082f49;padding:10px 14px;display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap}
+    .voucher .content{padding:14px}
+    .voucher table{width:100%;border-collapse:collapse}
+    .voucher th,.voucher td{padding:8px;border-bottom:1px dashed #e5e7eb;text-align:left;color:#111}
+    .voucher .meta{display:flex;gap:8px;flex-wrap:wrap;margin:8px 0}
+    .voucher .meta .pill{background:#f1f5f9;border-color:#e5e7eb;color:#0f172a}
+    .note{color:#94a3b8;font-size:12px}
+
+    /* Session Summary (စားရင်း) */
+    .summary .sheet{background:#fff;color:#111;border-radius:14px;border:1px solid #e5e7eb;overflow:hidden}
+    .summary header{background:#dcfce7;color:#052e1c;padding:10px 14px;display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap}
+    .summary .content{padding:14px}
+    .summary table{width:100%;border-collapse:collapse}
+    .summary th,.summary td{padding:8px;border-bottom:1px dashed #e5e7eb;text-align:left;color:#111}
+
+    /* Print modes */
+    @media print{
+      body{background:#fff}
+      .wrap{padding:0;max-width:none}
+      header,.grid,.actions.global,footer{display:none}
+      /* Voucher-only */
+      body[data-print="voucher"] .voucher{display:block}
+      body[data-print="voucher"] .summary{display:none}
+      /* Summary-only */
+      body[data-print="summary"] .voucher{display:none}
+      body[data-print="summary"] .summary{display:block}
+      .voucher .sheet,.summary .sheet{box-shadow:none;border:0;border-radius:0}
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <header>
+      <h1>2D / 3D ရောင်းချက် (Reverse & Bulk) — Voucher + Summary PDF</h1>
+      <span class="badge">Auto-Save • Refresh မပျက် • Phone PDF OK</span>
+    </header>
+
+    <div class="grid">
+      <!-- LEFT: Inputs -->
+      <section class="card">
+        <div class="body">
+          <div class="row2">
+            <div>
+              <label>အမျိုးအစား</label>
+              <select id="game">
+                <option value="2D">2D</option>
+                <option value="3D">3D</option>
+              </select>
+            </div>
+            <div id="twoDOptWrap">
+              <label>2D Option</label>
+              <select id="twoDOpt">
+                <option value="TOP">အပေါ်</option>
+                <option value="BOTTOM">အောက်</option>
+                <option value="BOTH">အပေါ် + အောက်</option>
+              </select>
+            </div>
+            <div id="threeDOptWrap" style="display:none">
+              <label>3D Option</label>
+              <select id="threeDOpt">
+                <option value="STRAIGHT">Straight (တစ်ခု)</option>
+                <option value="PERM6">Permute 6-way (တြတ်သုံးလုံး)</option>
+              </select>
+            </div>
+            <div class="switch">
+              <input type="checkbox" id="reverseToggle">
+              <label for="reverseToggle">Reverse ထည့် (2D 12↔21)</label>
+            </div>
+          </div>
+
+          <div style="margin-top:10px">
+            <label>Numbers (space/comma/newline ဖြင့် အများကြီး ထည့်ပါ)</label>
+            <textarea id="bulk" placeholder="ဥပမာ:\n2D — 12 34 56\n3D — 123, 456, 789"></textarea>
+          </div>
+
+          <div class="actions" style="margin-top:10px">
+            <button class="btn primary" id="btnAdd">Add Numbers</button>
+            <button class="btn ghost" id="btnSample">Sample ထည့်</button>
+            <button class="btn danger" id="btnClearAll">Delete All</button>
+          </div>
+
+          <p class="pill" style="margin-top:10px">ဂဏန်းတခုစီမှာ ထိုးကြေး/ဈေးကို အောက်က ဇယားထဲမှာ တစ်ခုချင်း ပြင်နိုင်ပါတယ်</p>
+        </div>
+      </section>
+
+      <!-- RIGHT: Stats -->
+      <aside class="card">
+        <div class="body">
+          <h3 style="margin-top:0">အနှစ်ချုပ်</h3>
+          <div class="stats">
+            <div class="stat">
+              <h3>ထည့်သွင်းထားသော ဂဏန်း</h3>
+              <div class="v" id="statNums">0</div>
+            </div>
+            <div class="stat">
+              <h3>စျေးအိုင်တမ် (expand ပါဝင်)</h3>
+              <div class="v" id="statItems">0</div>
+            </div>
+            <div class="stat">
+              <h3>စုစုပေါင်းငွေ (MMK)</h3>
+              <div class="v" id="statTotal">0</div>
+            </div>
+          </div>
+          <div class="actions global" style="margin-top:10px">
+            <button class="btn" id="btnSaveVoucherPdf">Save Voucher (PDF)</button>
+            <button class="btn" id="btnSaveSummaryPdf">Save Summary (PDF)</button>
+          </div>
+          <p class="note">ဖုန်းမှာနဲ့ကွန်ပျူတာမှာလည်း **Print → Save as PDF** နဲ့ ဖိုင်အဖြစ်သိမ်းပေးပါ။</p>
+        </div>
+      </aside>
+    </div>
+
+    <!-- Items Table -->
+    <section class="card" style="margin-top:14px">
+      <div class="body">
+        <table>
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>Game</th>
+              <th>Number</th>
+              <th>Detail</th>
+              <th class="right">Price (MMK)</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody id="tbody"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- Voucher (with Customer Name) -->
+    <section class="voucher" style="margin-top:14px">
+      <div class="sheet" id="voucherSheet">
+        <header>
+          <strong>ရောင်းချေမှု ဘောင်ချာ</strong>
+          <span id="vDate">-</span>
+        </header>
+        <div class="content">
+          <div class="meta">
+            <span id="vId" class="pill">Voucher: -</span>
+            <span class="pill">Items: <span id="vItems">0</span></span>
+            <span class="pill">Total: <span id="vTotal">0</span> MMK</span>
+          </div>
+          <div class="row2" style="margin-top:6px">
+            <div>
+              <label>Customer Name</label>
+              <input id="custName" placeholder="Customer Name">
+            </div>
+            <div>
+              <label>Note (optional)</label>
+              <input id="custNote" placeholder="e.g. Paid by KBZ Pay">
+            </div>
+          </div>
+          <table style="margin-top:10px">
+            <thead>
+              <tr>
+                <th>#</th>
+                <th>Game</th>
+                <th>Number</th>
+                <th>Detail</th>
+                <th class="right">Price (MMK)</th>
+              </tr>
+            </thead>
+            <tbody id="vBody"></tbody>
+          </table>
+          <p class="note" style="margin-top:8px">ယနေ့ရောင်းချေမှုများအတွက် ဘောင်ချာဖြစ်သည်။</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- Session Summary (စားရင်း) -->
+    <section class="summary" style="margin-top:14px">
+      <div class="sheet" id="summarySheet">
+        <header>
+          <strong>နေ့လုံး စားရင်း (Session Summary)</strong>
+          <span id="sDate">-</span>
+        </header>
+        <div class="content">
+          <div class="meta" style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:8px">
+            <span class="pill">Numbers: <span id="sNums">0</span></span>
+            <span class="pill">Items: <span id="sItems">0</span></span>
+            <span class="pill">Total: <span id="sTotal">0</span> MMK</span>
+          </div>
+          <table>
+            <thead>
+              <tr>
+                <th>#</th>
+                <th>Game</th>
+                <th>Number</th>
+                <th>Detail</th>
+                <th class="right">Price (MMK)</th>
+              </tr>
+            </thead>
+            <tbody id="sBody"></tbody>
+          </table>
+          <p class="note" style="margin-top:8px">Session Summary ကို Delete All မနှိပ်သရွှေ့ **Refresh မပျက်** — Local storage ထဲ auto-save ရှိပါတယ်။</p>
+        </div>
+      </div>
+    </section>
+
+    <footer>© 2025 • 2D/3D • Reverse • Bulk • Voucher & Summary PDF • Local Only</footer>
+  </div>
+
+  <script>
+    const $ = (id)=>document.getElementById(id);
+    const fmt = (n)=>Number(n||0).toLocaleString('en-US');
+
+    // ---- State (auto-persist) ----
+    const LS_KEY = 'two3dRows_v3';
+    const META_KEY = 'two3dMeta_v3';
+    const state = { rows: [] }; // {game, number, detail, price}
+    const meta = { custName:'', custNote:'' };
+
+    // ---- Elements ----
+    const game = $('game');
+    const twoDOptWrap = $('twoDOptWrap');
+    const threeDOptWrap = $('threeDOptWrap');
+    const twoDOpt = $('twoDOpt');
+    const threeDOpt = $('threeDOpt');
+    const reverseToggle = $('reverseToggle');
+    const bulk = $('bulk');
+    const btnAdd = $('btnAdd');
+    const btnSample = $('btnSample');
+    const btnClearAll = $('btnClearAll');
+    const tbody = $('tbody');
+    const statNums = $('statNums');
+    const statItems = $('statItems');
+    const statTotal = $('statTotal');
+
+    // Voucher
+    const vBody = $('vBody');
+    const vTotal = $('vTotal');
+    const vItems = $('vItems');
+    const vDate = $('vDate');
+    const vId = $('vId');
+    const custName = $('custName');
+    const custNote = $('custNote');
+    const btnSaveVoucherPdf = $('btnSaveVoucherPdf');
+    const btnSaveSummaryPdf = $('btnSaveSummaryPdf');
+
+    // Summary
+    const sBody = $('sBody');
+    const sTotal = $('sTotal');
+    const sItems = $('sItems');
+    const sNums = $('sNums');
+    const sDate = $('sDate');
+
+    // ---- UI helpers ----
+    function setModeUI(){
+      const is2D = game.value==='2D';
+      twoDOptWrap.style.display = is2D ? 'block' : 'none';
+      threeDOptWrap.style.display = is2D ? 'none' : 'block';
+      reverseToggle.disabled = !is2D;
+      reverseToggle.title = is2D ? '2D Reverse toggle' : '3D မှာ PERM6 ကိုအသုံးပြုပါ';
+    }
+    game.onchange = setModeUI;
+
+    function parseNumbers(raw){
+      const list = raw.split(/[^0-9]+/).filter(Boolean);
+      const wanted = (game.value==='2D') ? 2 : 3;
+      const cleaned = list.filter(n=>n.length===wanted).map(n=>n.slice(0,wanted));
+      const seen = new Set(), out=[];
+      for(const n of cleaned){ if(!seen.has(n)){ seen.add(n); out.push(n);} }
+      return out;
+    }
+
+    function permute3(n){
+      const a=n[0], b=n[1], c=n[2];
+      const arr=[a+b+c,a+c+b,b+a+c,b+c+a,c+a+b,c+b+a];
+      return [...new Set(arr)];
+    }
+
+    function pushRow(game, number, detail, price){
+      state.rows.push({game, number, detail, price:Number(price||0)});
+    }
+
+    function addRowsFromBulk(){
+      const nums = parseNumbers(bulk.value);
+      if(nums.length===0){ alert('ထည့်မည့် ဂဏန်းတွေ (digit အလိုက်) မတွေ့ပါ'); return; }
+
+      const is2D = game.value==='2D';
+      const opt2D = twoDOpt.value;       // TOP/BOTTOM/BOTH
+      const opt3D = threeDOpt.value;     // STRAIGHT/PERM6
+      const wantReverse = reverseToggle.checked;
+
+      for(const n of nums){
+        if(is2D){
+          if(opt2D==='TOP' || opt2D==='BOTH')   pushRow('2D', n, 'အပေါ်', 0);
+          if(opt2D==='BOTTOM' || opt2D==='BOTH')pushRow('2D', n, 'အောက်', 0);
+          if(wantReverse){
+            const r = n.split('').reverse().join('');
+            if(opt2D==='TOP' || opt2D==='BOTH')   pushRow('2D', r, 'အပေါ် (Reverse)', 0);
+            if(opt2D==='BOTTOM' || opt2D==='BOTH')pushRow('2D', r, 'အောက် (Reverse)', 0);
+          }
+        }else{
+          if(opt3D==='STRAIGHT'){ pushRow('3D', n, 'Straight', 0); }
+          else { for(const p of permute3(n)) pushRow('3D', p, 'Perm6', 0); }
+        }
+      }
+      bulk.value='';
+      saveState();
+      refresh();
+    }
+
+    function renderTable(){
+      tbody.innerHTML = '';
+      state.rows.forEach((row,i)=>{
+        const tr=document.createElement('tr');
+        tr.innerHTML = `
+          <td>${i+1}</td>
+          <td>${row.game}</td>
+          <td><strong>${row.number}</strong></td>
+          <td>${row.detail}</td>
+          <td class="right priceCell"><input type="number" min="0" value="${row.price}" data-i="${i}" /></td>
+          <td class="right"><button class="btn danger" data-del="${i}">ဖျက်</button></td>
+        `;
+        tbody.appendChild(tr);
+      });
+
+      // bind price edits
+      tbody.querySelectorAll('input[type="number"][data-i]')
+        .forEach(inp=>{
+          inp.oninput = (e)=>{
+            const i=Number(e.target.dataset.i);
+            state.rows[i].price = Number(e.target.value||0);
+            saveState();
+            drawTotals();
+          };
+        });
+
+      // bind delete
+      tbody.querySelectorAll('button[data-del]').forEach(btn=>{
+        btn.onclick=()=>{
+          const i=Number(btn.dataset.del);
+          state.rows.splice(i,1);
+          saveState();
+          refresh();
+        };
+      });
+    }
+
+    function drawVoucher(){
+      vBody.innerHTML='';
+      state.rows.forEach((r,i)=>{
+        const tr=document.createElement('tr');
+        tr.innerHTML = `
+          <td>${i+1}</td>
+          <td>${r.game}</td>
+          <td>${r.number}</td>
+          <td>${r.detail}</td>
+          <td class="right">${fmt(r.price)}</td>
+        `;
+        vBody.appendChild(tr);
+      });
+      const total = state.rows.reduce((a,c)=>a+Number(c.price||0),0);
+      vTotal.textContent = fmt(total);
+      vItems.textContent = String(state.rows.length);
+      const now=new Date();
+      vDate.textContent = now.toLocaleString();
+      vId.textContent = `V-${String(now.getFullYear()).slice(-2)}${String(now.getMonth()+1).padStart(2,'0')}${String(now.getDate()).padStart(2,'0')}-${String(state.rows.length).padStart(3,'0')}`;
+    }
+
+    function drawSummary(){
+      sBody.innerHTML='';
+      state.rows.forEach((r,i)=>{
+        const tr=document.createElement('tr');
+        tr.innerHTML = `
+          <td>${i+1}</td>
+          <td>${r.game}</td>
+          <td>${r.number}</td>
+          <td>${r.detail}</td>
+          <td class="right">${fmt(r.price)}</td>
+        `;
+        sBody.appendChild(tr);
+      });
+      const total = state.rows.reduce((a,c)=>a+Number(c.price||0),0);
+      const items = state.rows.length;
+      const numsUnique = new Set(state.rows.map(r=>r.number)).size;
+      sTotal.textContent = fmt(total);
+      sItems.textContent = String(items);
+      sNums.textContent = String(numsUnique);
+      sDate.textContent = new Date().toLocaleString();
+    }
+
+    function drawTotals(){
+      const total = state.rows.reduce((a,c)=>a+Number(c.price||0),0);
+      const items = state.rows.length;
+      const numsUnique = new Set(state.rows.map(r=>r.number)).size;
+      statTotal.textContent = fmt(total);
+      statItems.textContent = String(items);
+      statNums.textContent = String(numsUnique);
+      // also reflect voucher+summary
+      drawVoucher();
+      drawSummary();
+    }
+
+    function refresh(){
+      renderTable();
+      drawTotals();
+    }
+
+    // ---- Persist ----
+    function saveState(){
+      try{
+        localStorage.setItem(LS_KEY, JSON.stringify(state.rows));
+        meta.custName = custName.value||'';
+        meta.custNote = custNote.value||'';
+        localStorage.setItem(META_KEY, JSON.stringify(meta));
+      }catch(e){ console.warn('Save failed', e); }
+    }
+    function loadState(){
+      try{
+        const raw = localStorage.getItem(LS_KEY);
+        if(raw){ state.rows = JSON.parse(raw)||[]; }
+        const m = localStorage.getItem(META_KEY);
+        if(m){
+          const mm = JSON.parse(m)||{};
+          meta.custName = mm.custName||'';
+          meta.custNote = mm.custNote||'';
+        }
+      }catch(e){ console.warn('Load failed', e); }
+      custName.value = meta.custName||'';
+      custNote.value = meta.custNote||'';
+    }
+
+    // ---- Events ----
+    btnAdd.onclick = addRowsFromBulk;
+    btnClearAll.onclick = ()=>{
+      if(confirm('အားလုံးဖျက်မလား? (local storage ထဲက data အပါအဝင်)')){
+        state.rows.splice(0,state.rows.length);
+        localStorage.removeItem(LS_KEY);
+        localStorage.removeItem(META_KEY);
+        refresh();
+      }
+    };
+    btnSample.onclick = ()=>{
+      if(game.value==='2D'){ bulk.value = "12 34 56, 78 90"; twoDOpt.value='BOTH'; reverseToggle.checked=true; }
+      else { bulk.value = "123 456, 789"; threeDOpt.value='PERM6'; }
+    };
+    custName.oninput = saveState;
+    custNote.oninput = saveState;
+
+    // PDF buttons (use print-to-PDF; phone OK)
+    btnSaveVoucherPdf.onclick = ()=>{
+      document.body.setAttribute('data-print','voucher');
+      window.print();
+      setTimeout(()=>document.body.removeAttribute('data-print'), 300);
+    };
+    btnSaveSummaryPdf.onclick = ()=>{
+      document.body.setAttribute('data-print','summary');
+      window.print();
+      setTimeout(()=>document.body.removeAttribute('data-print'), 300);
+    };
+
+    // Keyboard shortcut: Ctrl/Cmd+Enter to add
+    bulk.addEventListener('keydown', (e)=>{
+      if((e.metaKey||e.ctrlKey) && e.key==='Enter'){ e.preventDefault(); addRowsFromBulk(); }
+    });
+
+    // ---- Init ----
+    loadState();
+    setModeUI();
+    refresh();
+  </script>
+</body>
+</html>
